@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TumorPINN Lab</title>
+<meta name="description" content="Interactive dashboard: inferring tumour-growth parameters with Legendre spectral solvers, CNNs and physics-informed neural networks.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script>
+  // apply the stored theme before first paint
+  try { const q = new URLSearchParams(location.search).get('theme'); const t = q || localStorage.getItem('theme'); if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#overview" aria-label="TumorPINN Lab">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c4-1 6-8 9-8s4 9 7 9 4-6 8-7" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      TumorPINN Lab
+    </a>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="simulator" aria-selected="false">Simulator</button>
+      <button role="tab" data-tab="inference" aria-selected="false">Inference lab</button>
+      <button role="tab" data-tab="benchmark" aria-selected="false">Benchmark</button>
+      <button role="tab" data-tab="cases" aria-selected="false">Case explorer</button>
+      <button role="tab" data-tab="real" aria-selected="false">Real data (GPU)</button>
+      <button role="tab" data-tab="numerics" aria-selected="false">Numerics &amp; training</button>
+      <button role="tab" data-tab="method" aria-selected="false">Method</button>
+    </nav>
+    <button class="icon-btn" id="theme-toggle" title="Toggle light / dark" aria-label="Toggle theme">&#9680;</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- ============================== OVERVIEW ============================== -->
+  <section class="panel active" id="tab-overview">
+    <div class="hero">
+      <h1>Inferring tumour-growth parameters with spectral solvers, CNNs and PINNs</h1>
+      <p class="lead">A reproducible study (CPU, with an optional GPU) of the inverse problem for reaction&ndash;diffusion tumour models. A Legendre&ndash;Gauss&ndash;Lobatto spectral solver generates the ground truth; a convolutional network, a physics-informed neural network and a classical spectral least-squares fit then recover the diffusivity <em>D</em> and proliferation rate &rho; from noisy space&ndash;time observations.</p>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="grid g4" id="kpis" style="margin-top:14px"></div>
+
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card">
+        <h3>Pipeline</h3>
+        <svg viewBox="0 0 620 250" role="img" aria-label="Pipeline diagram" style="width:100%;height:auto">
+          <g font-size="12" fill="var(--text)" font-family="system-ui, sans-serif">
+            <rect x="8" y="92" width="130" height="62" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="73" y="118" text-anchor="middle" font-weight="700">LGL spectral</text><text x="73" y="136" text-anchor="middle" fill="var(--muted)">solver (truth)</text>
+            <rect x="170" y="92" width="130" height="62" rx="10" fill="var(--surface-2)" stroke="var(--border)"/>
+            <text x="235" y="118" text-anchor="middle" font-weight="700">Noisy cohort</text><text x="235" y="136" text-anchor="middle" fill="var(--muted)">u(x,t) + noise</text>
+            <rect x="350" y="8" width="150" height="46" rx="10" fill="var(--surface)" stroke="var(--c-cnn)" stroke-width="2"/>
+            <text x="425" y="36" text-anchor="middle" font-weight="700">CNN (amortised)</text>
+            <rect x="350" y="102" width="150" height="46" rx="10" fill="var(--surface)" stroke="var(--c-nls)" stroke-width="2"/>
+            <text x="425" y="130" text-anchor="middle" font-weight="700">Spectral LSQ</text>
+            <rect x="350" y="192" width="150" height="52" rx="10" fill="var(--surface)" stroke="var(--c-pinn)" stroke-width="2"/>
+            <text x="425" y="216" text-anchor="middle" font-weight="700">PINN</text><text x="425" y="233" text-anchor="middle" fill="var(--c-warm)" font-size="11">cold or CNN-initialised</text>
+            <rect x="530" y="102" width="84" height="46" rx="10" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="2"/>
+            <text x="572" y="122" text-anchor="middle" font-weight="700">D, &#961;</text><text x="572" y="138" text-anchor="middle" fill="var(--muted)">+ error</text>
+            <g stroke="var(--muted)" stroke-width="1.6" fill="none">
+              <path d="M138 123H168"/><path d="M300 123H348" /><path d="M300 110C320 110 326 36 348 33"/><path d="M300 136C320 136 326 214 348 219"/>
+              <path d="M500 31C520 31 524 112 528 118"/><path d="M500 125H528"/><path d="M500 219C520 219 524 138 528 132"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="card">
+        <h3>What you can do here</h3>
+        <ol class="steps">
+          <li><b>Simulator</b> &mdash; run the spectral solver live in your browser and watch fronts of different diffusivity and growth rate invade the domain.</li>
+          <li><b>Inference lab</b> &mdash; corrupt the data with noise and fit <em>D</em>, &rho; in the browser. The cost landscape shows the narrow valley that makes the problem ill-conditioned.</li>
+          <li><b>Benchmark</b> &mdash; explore the full test results of the Python pipeline: accuracy, noise robustness, calibration and run time of every method.</li>
+          <li><b>Case explorer</b> &mdash; compare the reconstructed tumour fields of each method against the truth.</li>
+          <li><b>Real data (GPU)</b> &mdash; growth-law fits and forecasts for real mouse tumours from three public datasets, with thousands of PINNs trained in one batched GPU run.</li>
+          <li><b>Numerics &amp; training</b> &mdash; spectral vs finite-difference convergence, temporal order and training curves.</li>
+        </ol>
+        <p class="small muted">The PDE solver in this page is a JavaScript port of the Python solver and is verified against it to 1e-9 in the test suite.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px" id="takeaways"></div>
+  </section>
+
+  <!-- ============================== SIMULATOR ============================== -->
+  <section class="panel" id="tab-simulator">
+    <div class="grid side">
+      <div class="card"><h3>Model &amp; parameters</h3><div class="controls" id="sim-controls"></div></div>
+      <div class="grid" style="min-width:0">
+        <div class="grid g4" id="sim-stats"></div>
+        <div class="card"><h3>Tumour density u(x, t)<span class="hint">hover for values</span></h3><div id="sim-heat" class="plot tall"></div></div>
+        <div class="grid g2">
+          <div class="card"><h3>Profile at selected time<span class="hint" id="sim-tlabel"></span></h3><div id="sim-profile" class="plot short"></div>
+            <div class="ctl"><label for="sim-t"><span>time</span><output id="sim-t-o"></output></label><input type="range" id="sim-t" min="0" max="1" step="0.01" value="1"></div></div>
+          <div class="card"><h3>Front position &amp; burden<span class="hint">theory: speed 2&radic;(D&rho;)</span></h3><div id="sim-front" class="plot short"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== INFERENCE ============================== -->
+  <section class="panel" id="tab-inference">
+    <div class="grid side">
+      <div class="card">
+        <h3>Inverse problem</h3>
+        <p class="small muted">Ground truth is the Simulator's current configuration. The fit uses a <em>different</em> spectral resolution (M&nbsp;=&nbsp;40) from the data (M&nbsp;=&nbsp;64) and a smoothed initial slice, just like the Python baseline.</p>
+        <div class="controls" id="inf-controls"></div>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn" id="inf-gen">1 &middot; Generate data</button>
+          <button class="btn" id="inf-land">2 &middot; Cost landscape</button>
+          <button class="btn primary" id="inf-fit">3 &middot; Fit</button>
+        </div>
+        <div class="progress" style="margin-top:12px"><i id="inf-prog"></i></div>
+        <p class="status" id="inf-status"></p>
+        <p class="small muted">Tip: click on the landscape to choose the starting point of the fit.</p>
+      </div>
+      <div class="grid" style="min-width:0">
+        <div class="grid g2">
+          <div class="card"><h3>Cost landscape<span class="hint">log10 of sum of squares</span></h3><div id="inf-land-plot" class="plot tall"></div></div>
+          <div class="card"><h3>Estimate</h3><div class="tablewrap"><table class="t" id="inf-table"></table></div><div id="inf-insight" class="callout small" style="display:none"></div></div>
+        </div>
+        <div class="grid g3">
+          <div class="card"><h3>Observed</h3><div id="inf-obs" class="plot short"></div></div>
+          <div class="card"><h3>Fitted model</h3><div id="inf-fitplot" class="plot short"></div></div>
+          <div class="card"><h3>Residual</h3><div id="inf-res" class="plot short"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== BENCHMARK ============================== -->
+  <section class="panel" id="tab-benchmark">
+    <div class="card" style="margin-bottom:16px">
+      <div class="grid g2">
+        <div class="ctl"><label>Noise level &sigma; (additive Gaussian)</label><div class="seg" id="bm-noise"></div></div>
+        <div class="ctl"><label>Methods</label><div class="checks" id="bm-methods"></div></div>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h3>Diffusivity D<span class="hint">true vs estimated</span></h3><div id="bm-scatter-D" class="plot tall"></div></div>
+      <div class="card"><h3>Proliferation rate &rho;<span class="hint">true vs estimated</span></h3><div id="bm-scatter-rho" class="plot tall"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Accuracy &amp; cost<span class="hint" id="bm-subset"></span></h3><div class="tablewrap"><table class="t" id="bm-table"></table></div></div>
+    <div class="grid g3" style="margin-top:16px">
+      <div class="card"><h3>Noise robustness<span class="hint">mean abs. % error</span></h3><div id="bm-noise-plot" class="plot"></div></div>
+      <div class="card"><h3>Time per case<span class="hint">log scale</span></h3><div id="bm-time" class="plot"></div></div>
+      <div class="card"><h3>CNN ensemble uncertainty<span class="hint" id="bm-unc-hint"></span></h3><div id="bm-unc" class="plot"></div></div>
+    </div>
+  </section>
+
+  <!-- ============================== CASES ============================== -->
+  <section class="panel" id="tab-cases">
+    <div class="card" style="margin-bottom:16px">
+      <div class="grid g3">
+        <div class="ctl"><label for="cs-case">Test case</label><select id="cs-case"></select></div>
+        <div class="ctl"><label for="cs-mode">Show</label><select id="cs-mode"><option value="field">Reconstructed fields</option><option value="error">Absolute error vs truth</option></select></div>
+        <div class="ctl"><label for="cs-t"><span>Profile time</span><output id="cs-t-o"></output></label><input type="range" id="cs-t" min="0" max="31" step="1" value="31"></div>
+      </div>
+    </div>
+    <div class="grid g3" id="cs-grid"></div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h3>Profile at selected time</h3><div id="cs-profile" class="plot"></div></div>
+      <div class="card"><h3>Parameter estimates</h3><div class="tablewrap"><table class="t" id="cs-table"></table></div></div>
+    </div>
+  </section>
+
+  <!-- ============================== REAL DATA ============================== -->
+  <section class="panel" id="tab-real">
+    <div class="grid g2">
+      <div class="card" id="rl-dataset"></div>
+      <div class="card" id="rl-gpu"></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="grid g4">
+        <div class="ctl"><label for="rl-dataset-sel">Dataset</label><select id="rl-dataset-sel"></select></div>
+        <div class="ctl"><label for="rl-animal">Mouse</label><select id="rl-animal"></select></div>
+        <div class="ctl"><label>View</label><div class="seg" id="rl-mode"><button data-m="holdout" aria-pressed="true">Forecast last points</button><button data-m="full" aria-pressed="false">Fit all points</button></div></div>
+        <div class="ctl"><label>Display</label><div class="checks">
+          <label><input type="checkbox" id="rl-pinn" checked>PINN</label><label><input type="checkbox" id="rl-nls" checked>least squares</label><label><input type="checkbox" id="rl-log">log scale</label></div></div>
+      </div>
+    </div>
+    <div class="grid side" style="margin-top:16px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)">
+      <div class="card"><h3>Tumour volume<span class="hint">shaded = forecast window</span></h3><div id="rl-plot" class="plot tall"></div></div>
+      <div class="card"><h3>Fitted parameters</h3><div class="tablewrap"><table class="t" id="rl-table"></table></div></div>
+    </div>
+    <div class="grid g3" style="margin-top:16px">
+      <div class="card"><h3>Forecast accuracy<span class="hint">all mice</span></h3><div id="rl-err" class="plot"></div></div>
+      <div class="card"><h3>Which growth law wins?</h3><div id="rl-win" class="plot"></div></div>
+      <div class="card"><h3>PINN vs least-squares rates</h3><div id="rl-rate" class="plot"></div><p class="small muted" id="rl-rate-note"></p></div>
+    </div>
+  </section>
+
+  <!-- ============================== NUMERICS ============================== -->
+  <section class="panel" id="tab-numerics">
+    <div class="grid g2">
+      <div class="card"><h3>Spatial convergence<span class="hint">max error at t = T vs unknowns</span></h3><div id="nm-space" class="plot tall"></div>
+        <p class="small muted">Legendre&ndash;Gauss&ndash;Lobatto collocation reaches round-off level with a few dozen unknowns, whereas second-order finite differences only gain two digits per refinement of the mesh by 10&times;.</p></div>
+      <div class="card"><h3>Temporal convergence<span class="hint">Crank&ndash;Nicolson / Adams&ndash;Bashforth 2</span></h3><div id="nm-time" class="plot tall"></div>
+        <p class="small muted" id="nm-time-note"></p></div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h3>CNN training<span class="hint">smooth-L1 loss, 3 ensemble members</span></h3><div id="nm-cnn" class="plot"></div></div>
+      <div class="card"><h3>PINN training<span class="hint"><select id="nm-pinn-sel" style="width:auto;padding:2px 6px"></select></span></h3><div id="nm-pinn" class="plot"></div></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>PINN parameter trajectories<span class="hint">cold start vs CNN warm start</span></h3><div id="nm-traj" class="plot"></div></div>
+  </section>
+
+  <!-- ============================== METHOD ============================== -->
+  <section class="panel" id="tab-method">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Forward model</h3>
+        <p>Tumour cell density <em>u(x,t)</em> (scaled by the carrying capacity) on a segment with no-flux walls:</p>
+        <div class="math">$$u_t = D\,u_{xx} + f(u;\rho),\qquad u_x(0,t)=u_x(L,t)=0,\qquad u(x,0)=u_0(x)$$</div>
+        <p>with logistic growth \(f=\rho u(1-u)\) (Fisher&ndash;KPP) or Gompertz growth \(f=-\rho u\ln u\). For Fisher&ndash;KPP the invasion front travels at speed \(c=2\sqrt{D\rho}\) with width \(\sim\sqrt{D/\rho}\); the two parameters are therefore only separately identifiable through the front <em>shape</em>, which is why noise makes the inverse problem hard.</p>
+        <h3>Spectral discretisation</h3>
+        <p>The unknown is represented by its values at the Legendre&ndash;Gauss&ndash;Lobatto nodes, the roots of \((1-\xi^2)L_M'(\xi)\), and differentiated with the collocation matrix</p>
+        <div class="math">$$D_{mk}=\frac{L_M(\xi_m)}{L_M(\xi_k)(\xi_m-\xi_k)}\ (m\neq k),\quad D_{00}=-\tfrac{M(M+1)}{4},\quad D_{MM}=\tfrac{M(M+1)}{4}.$$</div>
+        <p>No-flux walls are imposed by eliminating the two boundary unknowns through \((D\mathbf u)_{0}=(D\mathbf u)_{M}=0\). Time stepping is Crank&ndash;Nicolson for diffusion and Adams&ndash;Bashforth&nbsp;2 for the reaction term. This is the radial ingredient of the Fourier&ndash;Legendre method of Taghavi &amp; Shahrokhi-Dehkordi, transplanted from the \(\sigma_{2,p}\)-energy minimisation problem to a time-dependent biomedical PDE.</p>
+      </div>
+      <div class="card">
+        <h3>Inference methods</h3>
+        <ul>
+          <li><b>CNN</b> &mdash; reads the 32&times;64 space&ndash;time image and regresses \((\log_{10}D,\log_{10}\rho)\). Trained on 6&nbsp;000 simulations with noise augmentation; an ensemble of three gives an uncertainty estimate.</li>
+          <li><b>Spectral least squares</b> &mdash; trust-region fit of \((D,\rho)\) with the spectral solver inside the loop, started from the prior centre; the initial slice is denoised by a ridge-regularised Legendre fit.</li>
+          <li><b>PINN</b> &mdash; an MLP \(u_\theta(x,t)\) trained on
+            $$\mathcal L=\tfrac1N\sum |u_\theta-u^{\rm obs}|^2+\lambda\,\tfrac1{N_c}\sum |\partial_t u_\theta-D\,\partial_{xx}u_\theta-f(u_\theta;\rho)|^2+\text{BC}$$
+            with \(D,\rho\) as trainable scalars (in log space).</li>
+          <li><b>CNN-init PINN</b> &mdash; the CNN estimate initialises the PINN parameters, so far fewer iterations are needed.</li>
+        </ul>
+        <h3>Real tumour curves</h3>
+        <p class="small">Each mouse volume curve is modelled by \(\frac{d\ln V}{dt}=g(\ln V)\) with \(g=\alpha\) (exponential), \(\alpha(1-V/K)\) (logistic) or \(\alpha(\ln K-\ln V)\) (Gompertz). One small network \(x_\theta(t)=\ln V\) per (mouse, law, restart) is trained with a data term plus the ODE residual on random collocation times up to the forecast target; all networks are stacked and trained together with batched matrix products on the GPU. The best restart is chosen on training loss only, and forecasts are scored on the withheld last measurements.</p>
+        <h3>Reproduce</h3>
+<pre>git clone https://github.com/mozhgantaghavi/tumor-growth-pinn
+cd tumor-growth-pinn
+pip install -e ".[dev]"
+python -m tumorpinn all        # data, train, benchmark, convergence, real data (GPU), export
+pytest &amp;&amp; node --test "tests/js/*.test.mjs"
+python -m http.server -d docs  # open http://localhost:8000</pre>
+        <h3>Reference</h3>
+        <p class="small">M.&nbsp;Taghavi and M.&nbsp;S.&nbsp;Shahrokhi-Dehkordi, <em>A Fourier&ndash;Legendre spectral method for approximating the minimizers of &sigma;<sub>2,p</sub>-energy</em>, Quarterly of Applied Mathematics (2023), <a href="https://doi.org/10.1090/qam/1674">doi:10.1090/qam/1674</a>.</p>
+        <h3>Limitations</h3>
+        <p class="small muted">The space-time benchmark uses synthetic one-dimensional data with additive Gaussian noise, and the CNN is trained for one PDE family and parameter prior. The real mouse data contain tumour volumes only, so they test growth laws and rates but not diffusivity, and the drug-treated cohort reflects net kinetics under treatment. Results demonstrate methodology and are not clinical evidence.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>&copy; 2026 Mozhgan Taghavi &middot; MIT licence</span>
+    <span><a href="https://github.com/mozhgantaghavi/tumor-growth-pinn">Source code</a> &middot; <a href="https://doi.org/10.1090/qam/1674">Spectral-method paper</a></span>
+  </div>
+</footer>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

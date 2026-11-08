@@ -1,0 +1,7 @@
+* text=auto
+
+# public datasets and binary artefacts are stored byte for byte
+data/real/*.txt -text
+data/real/*.xlsx binary
+*.png binary
+*.pt binary

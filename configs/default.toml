@@ -1,0 +1,119 @@
+# Default experiment configuration. Every stage of the pipeline reads this file;
+# pass --config my.toml to override individual keys.
+
+[paths]
+artifacts = "artifacts"
+checkpoints = "checkpoints"
+docs_data = "docs/data"
+
+[problem]
+model = "fisher_kpp"          # fisher_kpp | gompertz
+length = 1.0                  # domain [0, length], no-flux boundaries
+T = 1.0                       # final time
+D_range = [3e-3, 3e-2]        # log-uniform prior on diffusivity
+rho_range = [1.0, 8.0]        # log-uniform prior on proliferation rate
+
+[grid]
+M = 64                        # LGL degree of the data-generating solver
+n_x = 64                      # uniform observation grid (space)
+n_t = 32                      # observation snapshots (time, includes t = 0)
+substeps = 12                 # time steps between two snapshots
+
+[ic]                          # initial tumour = sum of Gaussian seeds
+n_seeds = [1, 2]
+amplitude = [0.3, 0.9]
+width = [0.05, 0.12]
+margin = 0.15                 # seeds stay this far from the walls
+
+[data]
+n_train = 6000
+n_val = 600
+n_test = 400
+seed = 2023
+
+[noise]
+levels = [0.0, 0.01, 0.02, 0.05, 0.1]   # additive Gaussian std (evaluation)
+train_max = 0.1                          # CNN training noise ~ U(0, train_max)
+
+[cnn]
+width = 32
+epochs = 40
+batch_size = 128
+lr = 2e-3
+weight_decay = 1e-5
+ensemble = 3                  # independent CNNs -> mean + uncertainty
+threads = 10                  # torch threads per ensemble member (members train in parallel)
+seed = 7
+
+[pinn]
+hidden = 64
+layers = 4
+n_collocation = 2000
+pretrain_iters = 400          # data-only warm-up
+iters_cold = 2500             # joint data + physics, cold start
+iters_warm = 800              # joint, initialised with the CNN estimate
+lr = 2e-3
+lr_params = 1.5e-2
+lr_params_warm = 3e-5         # CNN-initialised runs only fine-tune (D, rho): the PINN's own D is biased by noise
+pretrain_warm = 400
+w_pde = 1.0
+w_bc = 1.0
+
+[nls]
+ic_degree = 40                # Legendre smoothing degree for the observed t=0 slice
+ic_ridge = 1e-5               # ridge weight (penalty ~ k^4) on the Legendre coefficients
+M = 48                        # LGL degree used inside the fit
+substeps = 6
+
+[benchmark]
+n_nls_cases = 100             # test cases fitted with spectral least squares (every noise level)
+n_cases = 24                  # test cases on which the PINNs are run
+pinn_noise_levels = [0.02, 0.05]
+workers = 12
+showcase = 4                   # cases exported with full fields for the dashboard
+
+[convergence]
+M_values = [6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64]
+
+[real]                        # real mouse tumour-growth curves (public Zenodo datasets, CC BY 4.0)
+min_points = 7                # animals with fewer valid measurements are skipped
+holdout = 2                   # last measurements withheld for the forecasting test
+restarts = 8                  # independent PINN initialisations per (animal, law, mode)
+hidden = 64
+layers = 3
+iters = 5000
+pretrain = 500                # data-only warm-up iterations
+lr = 3e-3
+n_collocation = 64
+device = "auto"               # auto | cuda | cpu
+seed = 11
+
+[real.datasets.breast]
+title = "Tumor growth kinetics of human LM2-4LUC+ triple negative breast carcinoma cells"
+short = "Breast carcinoma (LM2-4LUC+)"
+authors = "Mastri, Tracz & Ebos"
+doi = "10.5281/zenodo.3574531"
+license = "CC BY 4.0"
+url = "https://zenodo.org/api/records/3574531/files/LM2-4LUC.txt/content"
+path = "data/real/LM2-4LUC.txt"
+
+[real.datasets.lung]
+title = "Tumor growth kinetics of subcutaneously implanted Lewis Lung carcinoma cells"
+short = "Lewis lung carcinoma"
+authors = "Benzekry, Lamont, Weremowicz, Beheshti, Hlatky & Hahnfeldt"
+doi = "10.5281/zenodo.3572401"
+license = "CC BY 4.0"
+url = "https://zenodo.org/api/records/3572401/files/LLC_sc_CCSB.txt/content"
+path = "data/real/LLC_sc_CCSB.txt"
+
+[real.datasets.treated]
+title = "Pre- and post-surgical monitoring of experimental primary tumor growth and metastasis under neo-adjuvant treatment"
+short = "Breast carcinoma, drug-treated cohort"
+authors = "Mastri, Benzekry & Ebos"
+doi = "10.5281/zenodo.10607753"
+license = "CC BY 4.0"
+url = "https://zenodo.org/api/records/10607753/files/ebos_data_breast.xlsx/content"
+path = "data/real/ebos_data_breast.xlsx"
+format = "xlsx_ebos"
+exclude_duplicates_of = ["breast"]   # 56 vehicle mice in this file are the same animals as in the breast dataset
+note = "Mice received sunitinib or axitinib at several doses and schedules (or vehicle), so the fitted laws describe net tumour kinetics under treatment. The 56 vehicle mice that also appear in the breast dataset are excluded."

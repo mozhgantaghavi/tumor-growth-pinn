@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "TumorPINN Lab: tumour-growth parameter inference with spectral solvers, CNNs and PINNs"
+type: software
+authors:
+  - family-names: Taghavi
+    given-names: Mozhgan
+version: 1.0.0
+date-released: 2026-11-08
+license: MIT
+repository-code: "https://github.com/mozhgantaghavi/tumor-growth-pinn"
+url: "https://mozhgantaghavi.github.io/tumor-growth-pinn/"
+keywords:
+  - physics-informed neural networks
+  - spectral methods
+  - reaction-diffusion
+  - inverse problems
+references:
+  - type: article
+    title: "A Fourier-Legendre spectral method for approximating the minimizers of sigma_{2,p}-energy"
+    authors:
+      - family-names: Taghavi
+        given-names: M.
+      - family-names: Shahrokhi-Dehkordi
+        given-names: M. S.
+    journal: "Quarterly of Applied Mathematics"
+    year: 2023
+    doi: "10.1090/qam/1674"

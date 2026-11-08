@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+node_modules/
+.DS_Store
+Thumbs.db
+
+# rebuilt with `python -m tumorpinn all`
+artifacts/
