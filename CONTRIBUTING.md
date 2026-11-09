@@ -16,7 +16,7 @@ pip install -e ".[dev,figures]"
 ```bash
 ruff check src tests scripts          # lint
 pytest                                 # Python unit tests
-node --test "tests/js/*.test.mjs"      # dashboard solver tests (needs docs/data/parity.json)
+node --test "tests/js/*.test.mjs"      # dashboard solver tests (Node 22+, needs docs/data/parity.json)
 ```
 
 The JavaScript solver in `docs/js/solver.js` is a port of `src/tumorpinn/solver.py`. If you change the

@@ -184,7 +184,7 @@ scripts/make_figures.py     static figures and tables for this README
   `python -m tumorpinn all`.
 - `pytest` (35 tests): spectral operators, solver accuracy against Radau, mass conservation, temporal order,
   front speed with the Bramson correction, estimators, metrics, real-data loaders and the batched GPU-style PINN.
-- `node --test "tests/js/*.test.mjs"`: the dashboard's JavaScript solver reproduces the Python trajectories to
+- `node --test "tests/js/*.test.mjs"` (Node 22 or newer): the dashboard's JavaScript solver reproduces the Python trajectories to
   1e-9 and recovers parameters in the browser.
 - CI runs lint, both test suites and the dashboard checks on every push.
 - GPU results depend on the CUDA build and device; the CPU path is deterministic up to library versions.
