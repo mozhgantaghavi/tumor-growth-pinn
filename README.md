@@ -121,18 +121,7 @@ Individual stages are cached under `artifacts/` and can be run alone:
 
 ## How it works
 
-```mermaid
-flowchart LR
-    S[LGL spectral solver<br/>no-flux walls] --- C[Noisy cohort<br/>u&#40;x,t&#41; + noise]
-    C --- CNN[CNN ensemble]
-    C --- NLS[Spectral least squares]
-    C --- P[PINN]
-    CNN ---|warm start| W[CNN-init PINN]
-    CNN & NLS & P & W --- B[Benchmark and JSON export]
-    R[Real mouse tumour curves] --- G[Batched PINNs on GPU]
-    G --- B
-    B --- D[Dashboard on GitHub Pages]
-```
+![Pipeline of the project: ground-truth solver and noisy cohort, four estimators, benchmark, dashboard; real mouse data feed the batched GPU PINNs](docs/assets/pipeline.svg)
 
 | Method | Idea | Strength | Weakness |
 |---|---|---|---|
@@ -154,8 +143,11 @@ flowchart LR
 Gompertz laws. One small network per *(mouse, law, mode, restart)* is trained with a data term and the ODE residual at
 random collocation times; all networks are stacked and trained together with batched matrix products. Restarts are
 selected on the training objective only, and forecasts are scored on the last two withheld measurements.
-Data: Mastri, Tracz and Ebos, Zenodo [10.5281/zenodo.3574531](https://doi.org/10.5281/zenodo.3574531) (CC BY 4.0), see
-[`data/real/README.md`](data/real/README.md).
+Data: three public Zenodo datasets of caliper tumour volumes in mice (breast carcinoma
+[10.5281/zenodo.3574531](https://doi.org/10.5281/zenodo.3574531), Lewis lung carcinoma
+[10.5281/zenodo.3572401](https://doi.org/10.5281/zenodo.3572401) and a drug-treated breast cohort
+[10.5281/zenodo.10607753](https://doi.org/10.5281/zenodo.10607753), all CC BY 4.0). Full references, columns and
+pre-processing are in [`data/real/README.md`](data/real/README.md).
 
 ## Repository layout
 
