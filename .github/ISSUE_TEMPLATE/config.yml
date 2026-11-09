@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Live dashboard
+    url: https://mozhgantaghavi.github.io/tumor-growth-pinn/
+    about: Explore the results interactively before opening an issue.

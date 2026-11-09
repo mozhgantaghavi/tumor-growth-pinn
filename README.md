@@ -11,6 +11,10 @@ neural networks (PINNs).**
 
 **Interactive dashboard: <https://mozhgantaghavi.github.io/tumor-growth-pinn/>**
 
+**Keywords:** physics-informed neural networks, PINN, convolutional neural networks, Legendre spectral methods,
+reaction-diffusion, Fisher-KPP, Gompertz growth, tumour growth modelling, inverse problems, parameter estimation,
+biomedical AI, computational oncology, scientific machine learning, PyTorch, GPU.
+
 ![Reconstructions](docs/assets/fig_fields.png)
 
 ## What this project does
